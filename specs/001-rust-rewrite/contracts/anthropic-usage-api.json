@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AnthropicUsageAPIContract",
+  "description": "Contract for the Anthropic OAuth usage API endpoint",
+
+  "request": {
+    "method": "GET",
+    "url": "https://api.anthropic.com/api/oauth/usage",
+    "headers": {
+      "Authorization": {
+        "type": "string",
+        "pattern": "^Bearer .+$",
+        "description": "OAuth access token from macOS Keychain",
+        "example": "Bearer sk-ant-oat01-..."
+      },
+      "anthropic-beta": {
+        "type": "string",
+        "const": "oauth-2025-04-20",
+        "description": "Beta API version identifier"
+      },
+      "User-Agent": {
+        "type": "string",
+        "const": "claude-code/2.0.31",
+        "description": "Client identifier"
+      },
+      "Content-Type": {
+        "type": "string",
+        "const": "application/json"
+      }
+    },
+    "body": null,
+    "timeout_ms": 5000
+  },
+
+  "response": {
+    "success": {
+      "status": 200,
+      "schema": {
+        "type": "object",
+        "required": ["five_hour", "seven_day"],
+        "properties": {
+          "five_hour": {
+            "$ref": "#/definitions/CycleInfo"
+          },
+          "seven_day": {
+            "$ref": "#/definitions/CycleInfo"
+          }
+        }
+      }
+    },
+    "errors": {
+      "401": {
+        "description": "Invalid or expired access token",
+        "action": "Display 'No creds' in status line, prompt re-authentication in stderr"
+      },
+      "403": {
+        "description": "Access denied",
+        "action": "Display 'No creds' in status line"
+      },
+      "429": {
+        "description": "Rate limited",
+        "action": "Display 'API error' in status line, retry after delay"
+      },
+      "500": {
+        "description": "Server error",
+        "action": "Display 'API error' in status line"
+      },
+      "timeout": {
+        "description": "Request timeout (>5s)",
+        "action": "Display 'API error' in status line"
+      },
+      "network": {
+        "description": "Network connectivity failure",
+        "action": "Display 'API error' in status line"
+      }
+    }
+  },
+
+  "definitions": {
+    "CycleInfo": {
+      "type": "object",
+      "required": ["utilization", "resets_at"],
+      "properties": {
+        "utilization": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Current utilization as percentage (0-100)"
+        },
+        "resets_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO8601 UTC timestamp when this cycle resets",
+          "example": "2026-01-29T15:30:00Z"
+        }
+      }
+    }
+  },
+
+  "examples": {
+    "success_response": {
+      "five_hour": {
+        "utilization": 35.5,
+        "resets_at": "2026-01-29T15:30:00Z"
+      },
+      "seven_day": {
+        "utilization": 68.2,
+        "resets_at": "2026-02-03T00:00:00Z"
+      }
+    }
+  }
+}

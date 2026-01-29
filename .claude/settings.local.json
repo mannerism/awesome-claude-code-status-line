@@ -2,7 +2,17 @@
   "permissions": {
     "allow": [
       "Bash(git fetch:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.rs)",
+      "WebFetch(domain:blog.logrocket.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:crates.io)",
+      "Bash(cargo test:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo bench:*)",
+      "Bash(cargo doc:*)"
     ]
   }
 }

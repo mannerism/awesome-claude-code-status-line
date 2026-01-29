@@ -1,0 +1,50 @@
+[package]
+name = "claude-status"
+version = "0.1.0"
+edition = "2021"
+description = "Claude Code status line with usage tracking and session size monitoring"
+authors = ["Claude Code Usage Tracker Contributors"]
+license = "MIT"
+repository = "https://github.com/anthropics/claude-code-status-line"
+rust-version = "1.75"
+
+[dependencies]
+# JSON parsing
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# HTTP client (blocking, minimal)
+ureq = { version = "2.9", features = ["json"] }
+
+# macOS Keychain access
+security-framework = "3.0"
+
+# Timestamp parsing and timezone handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# CLI argument parsing
+clap = { version = "4.4", features = ["derive"] }
+
+# Error handling
+thiserror = "2.0"
+
+[dev-dependencies]
+# Benchmarking
+criterion = "0.5"
+# Temporary files for testing
+tempfile = "3.10"
+
+[[bench]]
+name = "status_line"
+harness = false
+
+[[bench]]
+name = "parsing"
+harness = false
+
+[profile.release]
+opt-level = "z"       # Optimize for size
+codegen-units = 1     # Maximum optimization
+lto = "fat"           # Whole-program optimization
+strip = "symbols"     # Remove debug symbols
+panic = "abort"       # Smaller panic handling

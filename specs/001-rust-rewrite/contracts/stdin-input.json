@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ClaudeCodeStatusLineInput",
+  "description": "JSON input from Claude Code to the status line binary via stdin",
+  "type": "object",
+  "properties": {
+    "cwd": {
+      "type": "string",
+      "description": "Current working directory path. Falls back to process cwd if not provided."
+    },
+    "model": {
+      "type": "object",
+      "description": "Current model information",
+      "properties": {
+        "display_name": {
+          "type": "string",
+          "description": "Human-readable model name (e.g., 'Opus 4.5', 'Sonnet 4')",
+          "examples": ["Opus 4.5", "Sonnet 4", "Haiku 4.5"]
+        }
+      }
+    },
+    "context_window": {
+      "type": "object",
+      "description": "Context window usage information",
+      "properties": {
+        "current_usage": {
+          "type": "object",
+          "properties": {
+            "input_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "cache_creation_input_tokens": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "cache_read_input_tokens": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "context_window_size": {
+          "type": "integer",
+          "description": "Maximum context window size in tokens",
+          "minimum": 0
+        }
+      }
+    },
+    "transcript_path": {
+      "type": "string",
+      "description": "Absolute path to the current session transcript file (.jsonl)"
+    }
+  },
+  "additionalProperties": true,
+  "examples": [
+    {
+      "cwd": "/Users/dev/my-project",
+      "model": {
+        "display_name": "Opus 4.5"
+      },
+      "transcript_path": "/Users/dev/.claude/projects/my-project/session-123.jsonl"
+    },
+    {
+      "cwd": "/Users/dev/another-project",
+      "model": {
+        "display_name": "Sonnet 4"
+      },
+      "context_window": {
+        "current_usage": {
+          "input_tokens": 15000,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 5000
+        },
+        "context_window_size": 200000
+      }
+    }
+  ]
+}

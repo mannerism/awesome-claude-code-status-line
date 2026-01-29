@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: Rewrite the Claude Code usage tracking status line from Python to Rust, with new session size monitoring feature
 
+## Clarifications
+
+### Session 2026-01-29
+
+- Q: What platforms should be supported? → A: macOS only (arm64 + x86_64), Linux/Windows explicitly excluded
+- Q: Should Anthropic API integration be included? → A: API integration required, fail if credentials unavailable
+- Q: How should errors be displayed? → A: Both status line (brief) and stderr (detailed)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - View Usage Status Line (Priority: P1)
@@ -88,19 +96,18 @@ As a developer using Git, I want to see my current branch and repository status 
 
 ---
 
-### User Story 6 - Configuration Management (Priority: P3)
+### User Story 6 - Display Preferences (Priority: P3)
 
-As a user with a specific Claude subscription tier, I want to configure my limits so the usage percentages are calculated accurately for my plan.
+As a user, I want to optionally configure display preferences so the status line shows information in my preferred format.
 
-**Why this priority**: Different subscription tiers have different limits. Without configuration, the tool cannot provide accurate usage percentages.
+**Why this priority**: Display preferences are nice-to-have but not essential since sensible defaults work for most users.
 
-**Independent Test**: Run the binary with --configure flag, select a tier, verify the configuration is persisted and used for subsequent calculations.
+**Independent Test**: Run the binary with --configure flag, set a preference (e.g., timezone), verify subsequent runs use the saved preference.
 
 **Acceptance Scenarios**:
 
-1. **Given** the user runs the binary with --configure, **When** they select their subscription tier, **Then** the configuration is saved for future use
-2. **Given** the user has Max 5x subscription, **When** the status line calculates percentages, **Then** it uses Max 5x limits (50-200 prompts per 5h, separate Sonnet/Opus weekly hours)
-3. **Given** no configuration exists, **When** the binary runs, **Then** it uses reasonable defaults (Pro tier limits)
+1. **Given** the user runs the binary with --configure, **When** they set display preferences, **Then** the configuration is saved for future use
+2. **Given** no configuration exists, **When** the binary runs, **Then** it uses sensible defaults (local timezone for reset times)
 
 ---
 
@@ -108,10 +115,9 @@ As a user with a specific Claude subscription tier, I want to configure my limit
 
 - What happens when the transcript_path file does not exist? Display session size as "N/A" or omit the field.
 - What happens when JSON input is malformed or missing fields? Use sensible defaults (cwd from current directory, default model).
-- What happens when ~/.claude/projects directory does not exist? Display 0% usage.
-- What happens when the user's subscription tier is not configured? Default to Pro tier limits.
+- What happens when Keychain credentials are missing? Display "No creds" in status line; stderr shows detailed message instructing user to authenticate with Claude Code first.
+- What happens when Anthropic API request fails (network error, timeout, invalid token)? Display "API error" in status line; stderr shows detailed failure reason and troubleshooting steps.
 - What happens when Git operations fail (timeout, not a repo)? Omit Git information from the status line gracefully.
-- What happens when the 5-hour cycle or week boundary is crossed during execution? Correctly reset counters and display new cycle/week data.
 
 ## Requirements *(mandatory)*
 
@@ -123,13 +129,13 @@ As a user with a specific Claude subscription tier, I want to configure my limit
 - **FR-003**: System MUST use the current working directory as fallback when cwd is not provided in JSON input
 - **FR-004**: System MUST read the transcript_path field to determine session file location for size monitoring
 
-#### Usage Tracking
-- **FR-005**: System MUST scan all JSONL conversation files in ~/.claude/projects/ subdirectories
-- **FR-006**: System MUST count actual user prompts, excluding meta messages and local command output (messages containing `<command-name>` or `<local-command-stdout>` tags)
-- **FR-007**: System MUST calculate 5-hour cycle boundaries using epoch-based formula: cycle_number = floor(seconds_since_epoch / 18000)
-- **FR-008**: System MUST calculate weekly boundaries starting from Monday midnight UTC
-- **FR-009**: System MUST track session hours separately per model (Sonnet 4 and Opus 4) for Max tier users
-- **FR-010**: System MUST detect which model was used in each session by analyzing assistant message model fields
+#### Usage Tracking (via Anthropic API)
+- **FR-005**: System MUST retrieve OAuth access token from macOS Keychain (entry: "Claude Code-credentials")
+- **FR-006**: System MUST fetch usage data from Anthropic API endpoint (https://api.anthropic.com/api/oauth/usage)
+- **FR-007**: System MUST display 5-hour cycle utilization percentage from API response
+- **FR-008**: System MUST display 7-day utilization percentage from API response
+- **FR-009**: System MUST display reset timestamps for both 5-hour and weekly cycles from API response
+- **FR-010**: System MUST display errors in two places: brief message in status line output (e.g., "No creds" or "API error") and detailed diagnostic to stderr
 
 #### Session Size Monitoring
 - **FR-011**: System MUST read the file size of the transcript file when transcript_path is provided
@@ -150,9 +156,8 @@ As a user with a specific Claude subscription tier, I want to configure my limit
 - **FR-022**: System MUST display working tree status indicators (modified *, untracked ?, ahead ↑N, behind ↓N)
 
 #### Configuration
-- **FR-023**: System MUST support configuration of subscription tier (Free, Pro, Max 5x, Max 20x)
-- **FR-024**: System MUST persist configuration to a local config file
-- **FR-025**: System MUST load subscription tier limits from configuration for percentage calculations
+- **FR-023**: System MUST support optional configuration for display preferences (e.g., timezone for reset times)
+- **FR-024**: System MUST persist configuration to a local config file if user customizes settings
 
 #### Performance
 - **FR-026**: System MUST complete execution and produce output in under 50 milliseconds
@@ -166,10 +171,9 @@ As a user with a specific Claude subscription tier, I want to configure my limit
 ### Key Entities
 
 - **JSON Input**: Contains cwd (project path), model (with display_name), context_window (usage info), transcript_path (session file location)
-- **JSONL Conversation**: Individual lines with type, timestamp, message.role, message.model, message.content, isMeta, userType fields
-- **Usage Data**: Current 5-hour cycle (start_time, total_prompts), current week (start_time, sonnet_hours, opus_hours)
-- **User Configuration**: Subscription tier selection determining limit thresholds
-- **Subscription Tier**: Defines 5-hour cycle limits and weekly limits per model
+- **API Response**: Contains five_hour (utilization percentage, resets_at timestamp), seven_day (utilization percentage, resets_at timestamp)
+- **Keychain Credentials**: OAuth access token stored in macOS Keychain under "Claude Code-credentials"
+- **User Configuration**: Optional display preferences (e.g., timezone for reset times)
 
 ## Success Criteria *(mandatory)*
 
@@ -179,16 +183,24 @@ As a user with a specific Claude subscription tier, I want to configure my limit
 - **SC-002**: Binary file size is under 5MB for each target architecture
 - **SC-003**: Binary runs successfully on macOS arm64 and x86_64 without any runtime dependencies or additional libraries
 - **SC-004**: Session size monitoring correctly identifies file sizes with appropriate thresholds (green < 5MB, yellow 5-15MB, red > 15MB)
-- **SC-005**: Usage percentages match the Python implementation's calculations within 1% accuracy
-- **SC-006**: All unit tests pass covering prompt counting, cycle calculations, and session size determination
+- **SC-005**: Usage percentages displayed match the values returned by Anthropic API
+- **SC-006**: All unit tests pass covering API integration, error handling, and session size determination
 - **SC-007**: Installation script successfully places binary in ~/.local/bin/ and updates Claude Code settings
 - **SC-008**: Git status information appears within 100ms for repositories with up to 10,000 files
 
+## Out of Scope
+
+- Linux support (not planned for this release)
+- Windows support (not planned for this release)
+- Local JSONL file parsing for usage calculation (API provides accurate data)
+- Offline usage tracking (requires API connectivity)
+
 ## Assumptions
 
+- Users are running macOS (arm64 Apple Silicon or x86_64 Intel)
 - Users have Claude Code installed and configured with the status line feature enabled
 - The ~/.claude/projects/ directory structure follows Claude Code's standard format
 - JSONL files use UTF-8 encoding with one JSON object per line
 - Git is installed on the system for Git integration features (graceful degradation if not present)
-- macOS users have standard Keychain access for API credential retrieval (optional feature)
-- Users understand subscription tier terminology (Free, Pro, Max 5x, Max 20x)
+- Users have authenticated with Claude Code (OAuth credentials stored in macOS Keychain)
+- Users have network connectivity for API requests

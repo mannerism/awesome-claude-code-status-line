@@ -55,3 +55,16 @@ uv.lock
 # OS
 .DS_Store
 Thumbs.db
+
+# Rust
+target/
+debug/
+release/
+*.rs.bk
+*.rlib
+*.prof*
+Cargo.lock
+
+# Added by cargo
+
+/target
