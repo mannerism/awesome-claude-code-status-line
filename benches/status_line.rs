@@ -28,7 +28,7 @@ fn bench_status_line_build(c: &mut Criterion) {
             StatusLineBuilder::new()
                 .project_name(black_box("my-project"))
                 .git_status(black_box(git_status.clone()))
-                .model(black_box(Model::Opus4))
+                .model(black_box(Model::from_display_name("Opus 4.5")))
                 .five_hour(black_box(five_hour.clone()))
                 .seven_day(black_box(seven_day.clone()))
                 .session_size(black_box(session_size))
@@ -40,7 +40,7 @@ fn bench_status_line_build(c: &mut Criterion) {
         b.iter(|| {
             StatusLineBuilder::new()
                 .project_name(black_box("test"))
-                .model(black_box(Model::Sonnet4))
+                .model(black_box(Model::from_display_name("Sonnet 4")))
                 .build()
         })
     });
