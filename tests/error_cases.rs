@@ -8,7 +8,7 @@ use claude_status::error::StatusLineError;
 fn test_status_line_with_error() {
     let line = StatusLineBuilder::new()
         .project_name("test")
-        .model(Model::Sonnet4)
+        .model(Model::from_display_name("Sonnet 4"))
         .error("No creds")
         .build();
 

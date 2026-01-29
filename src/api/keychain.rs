@@ -1,6 +1,7 @@
 //! macOS Keychain credential retrieval
 
 use crate::error::StatusLineError;
+use std::process::Command;
 
 /// OAuth access token (cleared from memory on drop in future with zeroize)
 #[derive(Clone)]
@@ -25,16 +26,31 @@ impl std::fmt::Debug for AccessToken {
     }
 }
 
-/// Retrieve access token from macOS Keychain
+/// Retrieve access token from macOS Keychain using the `security` CLI.
+/// This avoids per-binary permission prompts - once allowed for Terminal/iTerm,
+/// it works forever regardless of binary rebuilds.
 pub fn get_access_token() -> Result<AccessToken, StatusLineError> {
-    use security_framework::os::macos::passwords::find_generic_password;
+    // Use the security CLI which inherits terminal permissions
+    let output = Command::new("security")
+        .args([
+            "find-generic-password",
+            "-s",
+            "Claude Code-credentials",
+            "-w",
+        ])
+        .output()
+        .map_err(|e| StatusLineError::KeychainAccess(e.to_string()))?;
 
-    // Find the Claude Code credentials in the default keychain
-    let (password, _item) = find_generic_password(None, "Claude Code-credentials", "")
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(StatusLineError::KeychainAccess(stderr.to_string()));
+    }
+
+    let password = String::from_utf8(output.stdout)
         .map_err(|e| StatusLineError::KeychainAccess(e.to_string()))?;
 
     // Parse the JSON credentials
-    let creds: serde_json::Value = serde_json::from_slice(&password)
+    let creds: serde_json::Value = serde_json::from_str(password.trim())
         .map_err(|e| StatusLineError::ApiResponse(e.to_string()))?;
 
     // Extract the access token

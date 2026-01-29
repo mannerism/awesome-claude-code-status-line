@@ -8,6 +8,7 @@ use clap::Parser;
 
 use claude_status::api::{client::fetch_usage, keychain::get_access_token};
 use claude_status::display::status_line::StatusLineBuilder;
+use claude_status::domain::context::ContextUsageInfo;
 use claude_status::domain::input::ClaudeInput;
 use claude_status::domain::session::SessionSize;
 use claude_status::git::status::get_git_status;
@@ -77,6 +78,17 @@ fn build_status_line(input: &ClaudeInput) -> String {
     // Model
     let model = input.get_model();
     builder = builder.model(model);
+
+    // Context window usage
+    if let Some(ref ctx) = input.context_window {
+        if let (Some(ref usage), Some(total)) = (&ctx.current_usage, ctx.context_window_size) {
+            let used = usage.input_tokens
+                + usage.cache_creation_input_tokens
+                + usage.cache_read_input_tokens;
+            let ctx_usage = ContextUsageInfo::new(used, total);
+            builder = builder.context_usage(ctx_usage);
+        }
+    }
 
     // Session size
     if let Some(size) = input.session_size_bytes {

@@ -76,3 +76,10 @@ src/
 - **Binary**: `~/.local/bin/claude-status`
 - **Config**: `~/.config/claude-status/config.json` (optional)
 - **Claude Settings**: `~/.claude/settings.json`
+
+## Active Technologies
+- Rust 1.75+ (MSRV documented in Cargo.toml) + serde, serde_json, ureq, chrono, clap, thiserror (unchanged); removing security-framework (002-security-cli-keychain)
+- N/A (reading from macOS Keychain via CLI) (002-security-cli-keychain)
+
+## Recent Changes
+- 002-security-cli-keychain: Added Rust 1.75+ (MSRV documented in Cargo.toml) + serde, serde_json, ureq, chrono, clap, thiserror (unchanged); removing security-framework

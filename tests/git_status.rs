@@ -19,7 +19,7 @@ fn test_git_repo_branch_displayed() {
     let line = StatusLineBuilder::new()
         .project_name("test")
         .git_status(git_status)
-        .model(Model::Sonnet4)
+        .model(Model::from_display_name("Sonnet 4"))
         .build();
 
     assert!(line.contains("🌿 main"), "Should contain git branch");
@@ -30,7 +30,7 @@ fn test_git_info_omitted_when_not_repo() {
     let line = StatusLineBuilder::new()
         .project_name("test")
         .git_status(GitStatus::NotRepo)
-        .model(Model::Sonnet4)
+        .model(Model::from_display_name("Sonnet 4"))
         .build();
 
     assert!(

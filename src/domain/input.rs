@@ -49,7 +49,7 @@ impl ClaudeInput {
         self.model
             .as_ref()
             .map(|m| Model::from_display_name(&m.display_name))
-            .unwrap_or(Model::Unknown("Unknown".to_string()))
+            .unwrap_or_else(|| Model::from_display_name("Unknown"))
     }
 }
 
@@ -74,38 +74,23 @@ pub struct ContextUsage {
     pub cache_read_input_tokens: u64,
 }
 
-/// Claude model identifier
+/// Claude model identifier - stores the original display name from Claude Code
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Model {
-    Sonnet4,
-    Opus4,
-    Haiku,
-    Unknown(String),
+pub struct Model {
+    display_name: String,
 }
 
 impl Model {
-    /// Parse from display name string
+    /// Create from display name string
     pub fn from_display_name(name: &str) -> Self {
-        let lower = name.to_lowercase();
-        if lower.contains("opus") {
-            Model::Opus4
-        } else if lower.contains("sonnet") {
-            Model::Sonnet4
-        } else if lower.contains("haiku") {
-            Model::Haiku
-        } else {
-            Model::Unknown(name.to_string())
+        Self {
+            display_name: name.to_string(),
         }
     }
 
-    /// Display name for status line
+    /// Display name for status line (returns the original name from Claude Code)
     pub fn display_name(&self) -> &str {
-        match self {
-            Model::Sonnet4 => "Sonnet",
-            Model::Opus4 => "Opus",
-            Model::Haiku => "Haiku",
-            Model::Unknown(s) => s,
-        }
+        &self.display_name
     }
 }
 
@@ -114,37 +99,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_model_from_display_name_opus() {
-        assert_eq!(Model::from_display_name("Opus 4.5"), Model::Opus4);
-        assert_eq!(Model::from_display_name("opus"), Model::Opus4);
-        assert_eq!(Model::from_display_name("OPUS 4"), Model::Opus4);
-    }
+    fn test_model_from_display_name() {
+        let model = Model::from_display_name("Opus 4.5");
+        assert_eq!(model.display_name(), "Opus 4.5");
 
-    #[test]
-    fn test_model_from_display_name_sonnet() {
-        assert_eq!(Model::from_display_name("Sonnet 4"), Model::Sonnet4);
-        assert_eq!(Model::from_display_name("sonnet"), Model::Sonnet4);
-        assert_eq!(Model::from_display_name("SONNET 4.5"), Model::Sonnet4);
-    }
+        let model = Model::from_display_name("Sonnet 4");
+        assert_eq!(model.display_name(), "Sonnet 4");
 
-    #[test]
-    fn test_model_from_display_name_haiku() {
-        assert_eq!(Model::from_display_name("Haiku"), Model::Haiku);
-        assert_eq!(Model::from_display_name("haiku 4.5"), Model::Haiku);
-    }
-
-    #[test]
-    fn test_model_from_display_name_unknown() {
-        let model = Model::from_display_name("CustomModel");
-        assert!(matches!(model, Model::Unknown(s) if s == "CustomModel"));
-    }
-
-    #[test]
-    fn test_model_display_name() {
-        assert_eq!(Model::Sonnet4.display_name(), "Sonnet");
-        assert_eq!(Model::Opus4.display_name(), "Opus");
-        assert_eq!(Model::Haiku.display_name(), "Haiku");
-        assert_eq!(Model::Unknown("Test".to_string()).display_name(), "Test");
+        let model = Model::from_display_name("Haiku");
+        assert_eq!(model.display_name(), "Haiku");
     }
 
     #[test]
@@ -183,13 +146,13 @@ mod tests {
     fn test_claude_input_get_model() {
         let json = r#"{"model": {"display_name": "Sonnet 4"}}"#;
         let input: ClaudeInput = serde_json::from_str(json).unwrap();
-        assert_eq!(input.get_model(), Model::Sonnet4);
+        assert_eq!(input.get_model().display_name(), "Sonnet 4");
     }
 
     #[test]
     fn test_claude_input_get_model_default() {
         let json = "{}";
         let input: ClaudeInput = serde_json::from_str(json).unwrap();
-        assert!(matches!(input.get_model(), Model::Unknown(_)));
+        assert_eq!(input.get_model().display_name(), "Unknown");
     }
 }

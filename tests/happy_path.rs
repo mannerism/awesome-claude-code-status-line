@@ -23,7 +23,7 @@ fn test_complete_status_line_output() {
     let line = StatusLineBuilder::new()
         .project_name("my-project")
         .git_status(git_status)
-        .model(Model::Opus4)
+        .model(Model::from_display_name("Opus 4.5"))
         .five_hour(five_hour)
         .seven_day(seven_day)
         .session_size(session_size)
@@ -38,7 +38,7 @@ fn test_complete_status_line_output() {
         line.contains("🌿 main*↑2"),
         "Should contain git branch with indicators"
     );
-    assert!(line.contains("🤖 Opus"), "Should contain model");
+    assert!(line.contains("🤖 Opus 4.5"), "Should contain model");
     assert!(line.contains("⚡"), "Should contain 5-hour cycle indicator");
     assert!(line.contains("35%"), "Should contain 5-hour percentage");
     assert!(line.contains("📅"), "Should contain 7-day cycle indicator");
@@ -51,11 +51,11 @@ fn test_complete_status_line_output() {
 fn test_minimal_status_line_output() {
     let line = StatusLineBuilder::new()
         .project_name("test")
-        .model(Model::Sonnet4)
+        .model(Model::from_display_name("Sonnet 4"))
         .build();
 
     assert!(line.contains("📁 test"));
-    assert!(line.contains("🤖 Sonnet"));
+    assert!(line.contains("🤖 Sonnet 4"));
     // Should not contain optional components
     assert!(!line.contains("🌿")); // No git
     assert!(!line.contains("⚡")); // No usage
@@ -67,7 +67,7 @@ fn test_status_line_with_not_repo() {
     let line = StatusLineBuilder::new()
         .project_name("test")
         .git_status(GitStatus::NotRepo)
-        .model(Model::Sonnet4)
+        .model(Model::from_display_name("Sonnet 4"))
         .build();
 
     assert!(line.contains("📁 test"));
@@ -78,7 +78,7 @@ fn test_status_line_with_not_repo() {
 fn test_status_line_parts_separated_by_pipe() {
     let line = StatusLineBuilder::new()
         .project_name("test")
-        .model(Model::Sonnet4)
+        .model(Model::from_display_name("Sonnet 4"))
         .build();
 
     // Parts should be separated by " | "
