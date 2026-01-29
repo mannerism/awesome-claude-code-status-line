@@ -80,6 +80,8 @@ src/
 ## Active Technologies
 - Rust 1.75+ (MSRV documented in Cargo.toml) + serde, serde_json, ureq, chrono, clap, thiserror (unchanged); removing security-framework (002-security-cli-keychain)
 - N/A (reading from macOS Keychain via CLI) (002-security-cli-keychain)
+- Bash (POSIX-compatible with bash extensions) + jq (for JSON manipulation), security (macOS Keychain CLI) (003-uninstall-script)
+- N/A (removes files, doesn't create them) (003-uninstall-script)
 
 ## Recent Changes
 - 002-security-cli-keychain: Added Rust 1.75+ (MSRV documented in Cargo.toml) + serde, serde_json, ureq, chrono, clap, thiserror (unchanged); removing security-framework

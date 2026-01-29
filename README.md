@@ -14,6 +14,20 @@ cd claude-code-status-line
 
 Then restart Claude Code.
 
+## Uninstall
+
+```bash
+./uninstall.sh
+```
+
+This removes the binary and settings but preserves your Claude Code login.
+
+For complete cleanup (including keychain credentials and backups):
+
+```bash
+./uninstall.sh --purge
+```
+
 ## Supported Platforms
 
 | Platform | Architecture          | Status           |

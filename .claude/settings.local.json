@@ -17,7 +17,9 @@
       "Bash(git branch:*)",
       "Bash(.specify/scripts/bash/setup-plan.sh:*)",
       "Bash(cargo check:*)",
-      "Bash(cargo fmt:*)"
+      "Bash(cargo fmt:*)",
+      "Bash(.specify/scripts/bash/update-agent-context.sh:*)",
+      "Bash(chmod:*)"
     ]
   }
 }
