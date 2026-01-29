@@ -19,7 +19,8 @@
       "Bash(cargo check:*)",
       "Bash(cargo fmt:*)",
       "Bash(.specify/scripts/bash/update-agent-context.sh:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(find:*)"
     ]
   }
 }
