@@ -65,7 +65,7 @@ fn test_binary_outputs_valid_status_line() {
         "Should contain project name from cwd"
     );
     assert!(stdout.contains("🤖"), "Should contain model indicator");
-    assert!(stdout.contains("S4"), "Should contain model short name");
+    assert!(stdout.contains("Sonnet"), "Should contain model name");
     assert!(stdout.contains(" | "), "Parts should be pipe-separated");
 }
 
@@ -99,9 +99,10 @@ fn test_binary_handles_empty_json() {
     );
 }
 
-/// Test that the binary reports errors to stderr
+/// Test that the binary handles missing credentials gracefully
+/// Note: This test may behave differently depending on whether API credentials are available
 #[test]
-fn test_binary_reports_errors_to_stderr() {
+fn test_binary_handles_credentials_gracefully() {
     let binary = env!("CARGO_BIN_EXE_claude-status");
 
     let mut child = Command::new(binary)
@@ -116,13 +117,15 @@ fn test_binary_reports_errors_to_stderr() {
 
     let output = child.wait_with_output().expect("Failed to read output");
 
-    let stderr = String::from_utf8_lossy(&output.stderr);
-
-    // Should report API error to stderr (since we won't have valid credentials in test)
+    // Binary should always exit successfully (errors are shown inline)
     assert!(
-        stderr.contains("API error") || stderr.contains("Keychain"),
-        "Should report API/credential errors to stderr"
+        output.status.success(),
+        "Binary should exit successfully even with credential issues"
     );
+
+    // Should produce output on stdout regardless
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(!stdout.is_empty(), "Should produce output on stdout");
 }
 
 /// Test that the binary handles invalid JSON

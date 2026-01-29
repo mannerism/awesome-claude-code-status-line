@@ -38,7 +38,7 @@ fn test_complete_status_line_output() {
         line.contains("🌿 main*↑2"),
         "Should contain git branch with indicators"
     );
-    assert!(line.contains("🤖 O4"), "Should contain model");
+    assert!(line.contains("🤖 Opus"), "Should contain model");
     assert!(line.contains("⚡"), "Should contain 5-hour cycle indicator");
     assert!(line.contains("35%"), "Should contain 5-hour percentage");
     assert!(line.contains("📅"), "Should contain 7-day cycle indicator");
@@ -55,7 +55,7 @@ fn test_minimal_status_line_output() {
         .build();
 
     assert!(line.contains("📁 test"));
-    assert!(line.contains("🤖 S4"));
+    assert!(line.contains("🤖 Sonnet"));
     // Should not contain optional components
     assert!(!line.contains("🌿")); // No git
     assert!(!line.contains("⚡")); // No usage

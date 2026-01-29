@@ -143,7 +143,7 @@ mod tests {
             .project_name("test")
             .model(Model::Opus4)
             .build();
-        assert!(line.contains("🤖 O4"));
+        assert!(line.contains("🤖 Opus"));
     }
 
     #[test]
