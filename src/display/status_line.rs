@@ -1,5 +1,6 @@
 //! Status line builder and formatter
 
+use crate::domain::context::ContextUsageInfo;
 use crate::domain::git::GitStatus;
 use crate::domain::input::Model;
 use crate::domain::session::SessionSize;
@@ -11,6 +12,7 @@ pub struct StatusLineBuilder {
     project_name: Option<String>,
     git_status: Option<GitStatus>,
     model: Option<Model>,
+    context_usage: Option<ContextUsageInfo>,
     five_hour: Option<CycleInfo>,
     seven_day: Option<CycleInfo>,
     session_size: Option<SessionSize>,
@@ -38,6 +40,12 @@ impl StatusLineBuilder {
     /// Set the model
     pub fn model(mut self, model: Model) -> Self {
         self.model = Some(model);
+        self
+    }
+
+    /// Set the context window usage
+    pub fn context_usage(mut self, usage: ContextUsageInfo) -> Self {
+        self.context_usage = Some(usage);
         self
     }
 
@@ -69,19 +77,22 @@ impl StatusLineBuilder {
     pub fn build(&self) -> String {
         let mut parts = Vec::new();
 
-        // Project name
-        if let Some(ref name) = self.project_name {
-            parts.push(format!("📁 {}", name));
-        }
-
-        // Git status
-        if let Some(GitStatus::Repo(ref status)) = self.git_status {
-            parts.push(format!("🌿 {}", status.format_full()));
-        }
-
-        // Model
+        // Model (first)
         if let Some(ref model) = self.model {
             parts.push(format!("🤖 {}", model.display_name()));
+        }
+
+        // Context window usage
+        if let Some(ref ctx) = self.context_usage {
+            let color = ctx.threshold().color();
+            let indicator = ctx.threshold().indicator();
+            let display = ctx.format_display();
+            let colored_display = color.colorize(&display);
+            if indicator.is_empty() {
+                parts.push(format!("📊 {}", colored_display));
+            } else {
+                parts.push(format!("📊 {}{}", colored_display, indicator));
+            }
         }
 
         // Error or usage data
@@ -97,13 +108,24 @@ impl StatusLineBuilder {
                 parts.push(format!("⚡ {} @{}", colored_pct, reset));
             }
 
-            // 7-day cycle
+            // 7-day cycle (with reset time)
             if let Some(ref cycle) = self.seven_day {
                 let pct = cycle.utilization.value();
                 let color = cycle.utilization.threshold().color();
                 let colored_pct = color.colorize(&format!("{}%", pct));
-                parts.push(format!("📅 {}", colored_pct));
+                let reset = cycle.format_reset_local();
+                parts.push(format!("📅 {} @{}", colored_pct, reset));
             }
+        }
+
+        // Project name
+        if let Some(ref name) = self.project_name {
+            parts.push(format!("📁 {}", name));
+        }
+
+        // Git status
+        if let Some(GitStatus::Repo(ref status)) = self.git_status {
+            parts.push(format!("🌿 {}", status.format_full()));
         }
 
         // Session size
@@ -141,16 +163,16 @@ mod tests {
     fn test_status_line_builder_with_model() {
         let line = StatusLineBuilder::new()
             .project_name("test")
-            .model(Model::Opus4)
+            .model(Model::from_display_name("Opus 4.5"))
             .build();
-        assert!(line.contains("🤖 Opus"));
+        assert!(line.contains("🤖 Opus 4.5"));
     }
 
     #[test]
     fn test_status_line_builder_with_error() {
         let line = StatusLineBuilder::new()
             .project_name("test")
-            .model(Model::Sonnet4)
+            .model(Model::from_display_name("Sonnet 4"))
             .error("No creds")
             .build();
         assert!(line.contains("⚠️ No creds"));
@@ -165,7 +187,7 @@ mod tests {
 
         let line = StatusLineBuilder::new()
             .project_name("test")
-            .model(Model::Opus4)
+            .model(Model::from_display_name("Opus 4.5"))
             .five_hour(five_hour)
             .seven_day(seven_day)
             .build();

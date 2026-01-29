@@ -13,7 +13,14 @@
       "Bash(cargo clippy:*)",
       "Bash(cargo bench:*)",
       "Bash(cargo doc:*)",
-      "Bash(cargo run:*)"
+      "Bash(cargo run:*)",
+      "Bash(git branch:*)",
+      "Bash(.specify/scripts/bash/setup-plan.sh:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(.specify/scripts/bash/update-agent-context.sh:*)",
+      "Bash(chmod:*)",
+      "Bash(find:*)"
     ]
   }
 }

@@ -33,27 +33,14 @@ if ! security find-generic-password -s "Claude Code-credentials" &>/dev/null; th
     echo ""
     echo "⚠️  Not signed in to Claude Code."
     echo ""
-    echo "Opening login page..."
+    echo "Please login first:"
+    echo "  1. Run: claude"
+    echo "  2. Type: /login"
+    echo "  3. Complete the login in your browser"
+    echo "  4. Exit Claude Code (Ctrl+C or type 'exit')"
+    echo "  5. Re-run: ./install.sh"
     echo ""
-
-    # Run claude login command (this opens OAuth in browser)
-    claude /login
-
-    # Wait and verify credentials exist
-    echo ""
-    echo "Waiting for authentication to complete..."
-    for i in {1..30}; do
-        if security find-generic-password -s "Claude Code-credentials" &>/dev/null; then
-            echo "✅ Authentication successful!"
-            break
-        fi
-        sleep 2
-    done
-
-    if ! security find-generic-password -s "Claude Code-credentials" &>/dev/null; then
-        echo "❌ Authentication timed out. Please try again."
-        exit 1
-    fi
+    exit 1
 else
     echo "✅ Claude Code authenticated"
 fi

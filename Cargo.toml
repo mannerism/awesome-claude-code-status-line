@@ -16,9 +16,6 @@ serde_json = "1.0"
 # HTTP client (blocking, minimal)
 ureq = { version = "2.9", features = ["json"] }
 
-# macOS Keychain access
-security-framework = "3.0"
-
 # Timestamp parsing and timezone handling
 chrono = { version = "0.4", features = ["serde"] }
 

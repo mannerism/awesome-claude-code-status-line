@@ -10,7 +10,7 @@ fn test_valid_session_size_displayed() {
 
     let line = StatusLineBuilder::new()
         .project_name("test")
-        .model(Model::Sonnet4)
+        .model(Model::from_display_name("Sonnet 4"))
         .session_size(size)
         .build();
 
@@ -22,7 +22,7 @@ fn test_valid_session_size_displayed() {
 fn test_session_size_omitted_when_not_provided() {
     let line = StatusLineBuilder::new()
         .project_name("test")
-        .model(Model::Sonnet4)
+        .model(Model::from_display_name("Sonnet 4"))
         .build();
 
     assert!(

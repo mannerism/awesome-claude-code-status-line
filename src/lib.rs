@@ -18,7 +18,7 @@
 //!
 //! let line = StatusLineBuilder::new()
 //!     .project_name("my-project")
-//!     .model(Model::Opus4)
+//!     .model(Model::from_display_name("Opus 4.5"))
 //!     .build();
 //!
 //! println!("{}", line);
