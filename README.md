@@ -7,8 +7,8 @@ A fast, native status line for Claude Code that shows your API usage, session si
 ## Quick Start
 
 ```bash
-git clone <repo-url>
-cd claude-code-status-line
+git clone https://github.com/mannerism/awesome-claude-code-status-line.git
+cd awesome-claude-code-status-line
 ./install.sh
 ```
 
