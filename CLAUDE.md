@@ -9,7 +9,7 @@ A high-performance Rust-based status line for Claude Code that displays API usag
 ## Key Commands
 
 ```bash
-# Build
+# Build (development)
 cargo build --release
 
 # Test
@@ -21,8 +21,17 @@ cargo clippy -- -D warnings
 # Format
 cargo fmt
 
-# Install
+# Install (downloads prebuilt binary from GitHub Releases)
 ./install.sh
+
+# Install specific version
+./install.sh --version v0.1.0
+
+# Check installed vs latest version
+./install.sh --check
+
+# Shell script linting
+shellcheck install.sh
 ```
 
 ## Architecture
@@ -76,12 +85,24 @@ src/
 - **Binary**: `~/.local/bin/claude-status`
 - **Config**: `~/.config/claude-status/config.json` (optional)
 - **Claude Settings**: `~/.claude/settings.json`
+- **CI Release Workflow**: `.github/workflows/release.yml`
+
+## Installer
+
+The `install.sh` script downloads prebuilt universal macOS binaries from GitHub Releases (no Rust toolchain required). It supports:
+- `--version vX.Y.Z`: Install a specific release
+- `--check`: Compare installed vs latest version
+- `--help`: Show usage information
+
+Prerequisites: `curl`, `jq`, Claude Code installed and authenticated.
 
 ## Active Technologies
 - Rust 1.75+ (MSRV documented in Cargo.toml) + serde, serde_json, ureq, chrono, clap, thiserror (unchanged); removing security-framework (002-security-cli-keychain)
 - N/A (reading from macOS Keychain via CLI) (002-security-cli-keychain)
 - Bash (POSIX-compatible with bash extensions) + jq (for JSON manipulation), security (macOS Keychain CLI) (003-uninstall-script)
 - N/A (removes files, doesn't create them) (003-uninstall-script)
+- Bash (POSIX-compatible with bash extensions) for `install.sh`; YAML for GitHub Actions workflow; Rust 1.75+ for the binary being built by CI (not modified in this feature) + curl (HTTP client), jq (JSON manipulation), security (macOS Keychain CLI), shasum (checksum verification), lipo (universal binary creation in CI) (004-prebuilt-release-installer)
+- N/A (installer reads/writes `~/.claude/settings.json` and `~/.local/bin/claude-status`) (004-prebuilt-release-installer)
 
 ## Recent Changes
 - 002-security-cli-keychain: Added Rust 1.75+ (MSRV documented in Cargo.toml) + serde, serde_json, ureq, chrono, clap, thiserror (unchanged); removing security-framework

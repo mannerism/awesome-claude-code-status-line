@@ -14,6 +14,25 @@ cd awesome-claude-code-status-line
 
 Then restart Claude Code.
 
+Install a specific version:
+
+```bash
+./install.sh --version v0.1.0
+```
+
+Check installed vs latest:
+
+```bash
+./install.sh --check
+```
+
+## Security & Privacy
+
+- Reads Claude Code OAuth credentials from macOS Keychain (`Claude Code-credentials`) to query usage.
+- Sends the bearer token only to Anthropic’s usage endpoint: `https://api.anthropic.com/api/oauth/usage`.
+- Does **not** transmit prompts, files, or repository data.
+- The installer downloads prebuilt binaries from GitHub Releases and verifies SHA256 checksums. No compilation or Rust toolchain required.
+
 ## Uninstall
 
 ```bash
@@ -28,6 +47,8 @@ For complete cleanup (including keychain credentials and backups):
 ./uninstall.sh --purge
 ```
 
+**Note:** `--purge` deletes your `Claude Code-credentials` entry from macOS Keychain.
+
 ## Supported Platforms
 
 | Platform | Architecture          | Status           |
@@ -40,7 +61,8 @@ For complete cleanup (including keychain credentials and backups):
 **Requirements:**
 
 - macOS 12+
-- Rust 1.75+ (for building from source)
+- curl
+- jq
 - Claude Code installed and signed in
 
 ## How It Works
