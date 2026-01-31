@@ -68,7 +68,16 @@ fi
 # Resolve version
 if [[ -z "$VERSION" ]]; then
     echo "🔎 Fetching latest release..."
-    VERSION=$(curl -sSfL "https://api.github.com/repos/mannerism/awesome-claude-code-status-line/releases/latest" | jq -r .tag_name)
+    RELEASE_JSON=$(curl -sSfL "https://api.github.com/repos/mannerism/awesome-claude-code-status-line/releases/latest" 2>/dev/null) || {
+        echo "❌ Could not fetch latest release from GitHub."
+        echo "   This may mean no releases exist yet, or GitHub API is unreachable."
+        exit 1
+    }
+    VERSION=$(echo "$RELEASE_JSON" | jq -r .tag_name)
+    if [[ -z "$VERSION" || "$VERSION" == "null" ]]; then
+        echo "❌ No release tag found. Push a tag first: git tag v0.1.0 && git push origin v0.1.0"
+        exit 1
+    fi
 fi
 
 if [[ "$VERSION" != v* ]]; then
