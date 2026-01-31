@@ -1,15 +1,60 @@
 #!/bin/bash
-# Claude Code Status Line - One-step installer
+# Claude Code Status Line - One-step installer (prebuilt release)
 
 set -e
+
+VERSION=""
+SHOW_HELP=false
+CHECK_ONLY=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --version|-v)
+            if [[ -z "${2:-}" ]]; then
+                echo "❌ Missing value for --version"
+                exit 1
+            fi
+            VERSION="$2"
+            shift 2
+            ;;
+        --check)
+            CHECK_ONLY=true
+            shift
+            ;;
+        --help|-h)
+            SHOW_HELP=true
+            shift
+            ;;
+        *)
+            echo "❌ Unknown option: $1" >&2
+            echo "   Run './install.sh --help' for usage information." >&2
+            exit 1
+            ;;
+    esac
+done
+
+if [[ "$SHOW_HELP" == true ]]; then
+    echo "Claude Code Status Line - Installer"
+    echo ""
+    echo "Usage: ./install.sh [--version vX.Y.Z]"
+    echo ""
+    echo "Options:"
+    echo "  --version, -v   Install a specific release tag (e.g., v0.1.0)"
+    echo "  --check         Show installed vs latest version and exit"
+    echo "  --help, -h      Show this help"
+    exit 0
+fi
 
 echo "🚀 Installing Claude Code Status Line..."
 echo ""
 
-# Check for Rust
-if ! command -v cargo &> /dev/null; then
-    echo "❌ Rust not found. Install it first:"
-    echo "   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+# Create install directory (needed for --check)
+INSTALL_DIR="$HOME/.local/bin"
+mkdir -p "$INSTALL_DIR"
+
+# Check for curl
+if ! command -v curl &> /dev/null; then
+    echo "❌ curl not found. Install it first."
     exit 1
 fi
 
@@ -18,6 +63,28 @@ if ! command -v jq &> /dev/null; then
     echo "❌ jq not found. Install it first:"
     echo "   brew install jq"
     exit 1
+fi
+
+# Resolve version
+if [[ -z "$VERSION" ]]; then
+    echo "🔎 Fetching latest release..."
+    VERSION=$(curl -sSfL "https://api.github.com/repos/mannerism/awesome-claude-code-status-line/releases/latest" | jq -r .tag_name)
+fi
+
+if [[ "$VERSION" != v* ]]; then
+    VERSION="v$VERSION"
+fi
+
+ASSET="claude-status-macos-universal.tar.gz"
+BASE_URL="https://github.com/mannerism/awesome-claude-code-status-line/releases/download/$VERSION"
+ARCHIVE_URL="$BASE_URL/$ASSET"
+SHA_URL="$BASE_URL/sha256.txt"
+
+if [[ "$CHECK_ONLY" == true ]]; then
+    INSTALLED_VERSION=$("$INSTALL_DIR/claude-status" --version 2>/dev/null | awk '{print $2}')
+    echo "Latest:    $VERSION"
+    echo "Installed: ${INSTALLED_VERSION:-not installed}"
+    exit 0
 fi
 
 # Check for Claude CLI
@@ -45,16 +112,26 @@ else
     echo "✅ Claude Code authenticated"
 fi
 
-# Build release binary
-echo "📦 Building..."
-cargo build --release --quiet
+echo "📦 Downloading $VERSION..."
+TMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TMP_DIR"' EXIT
+curl -sSfL "$ARCHIVE_URL" -o "$TMP_DIR/$ASSET"
 
-# Create install directory
-INSTALL_DIR="$HOME/.local/bin"
-mkdir -p "$INSTALL_DIR"
+# Verify checksum if available
+if curl -sSfL "$SHA_URL" -o "$TMP_DIR/sha256.txt" 2>/dev/null; then
+    (cd "$TMP_DIR" && shasum -a 256 -c sha256.txt)
+else
+    echo "⚠️  Checksum file not available. Skipping integrity verification."
+fi
+
+tar -xzf "$TMP_DIR/$ASSET" -C "$TMP_DIR"
+if [[ ! -f "$TMP_DIR/claude-status" ]]; then
+    echo "❌ Downloaded archive missing claude-status binary"
+    exit 1
+fi
 
 # Copy binary
-cp target/release/claude-status "$INSTALL_DIR/"
+cp "$TMP_DIR/claude-status" "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/claude-status"
 echo "✅ Installed to $INSTALL_DIR/claude-status"
 
