@@ -5,7 +5,7 @@ edition = "2021"
 description = "Claude Code status line with usage tracking and session size monitoring"
 authors = ["Claude Code Usage Tracker Contributors"]
 license = "MIT"
-repository = "https://github.com/anthropics/claude-code-status-line"
+repository = "https://github.com/mannerism/awesome-claude-code-status-line"
 rust-version = "1.75"
 
 [dependencies]
