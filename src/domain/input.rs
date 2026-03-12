@@ -2,7 +2,67 @@
 
 use std::path::PathBuf;
 
+use serde::de::Deserializer;
 use serde::Deserialize;
+
+/// Deserialize model as either a string or a ModelInfo object
+fn deserialize_model_info<'de, D>(deserializer: D) -> Result<Option<ModelInfo>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum StringOrModelInfo {
+        String(String),
+        ModelInfo(ModelInfo),
+    }
+
+    let value: Option<StringOrModelInfo> = Option::deserialize(deserializer)?;
+    Ok(value.map(|v| match v {
+        StringOrModelInfo::String(s) => {
+            // Convert model ID like "claude-opus-4-6" to display name
+            let display = model_id_to_display_name(&s);
+            ModelInfo {
+                display_name: display,
+            }
+        }
+        StringOrModelInfo::ModelInfo(info) => info,
+    }))
+}
+
+/// Convert a model ID string to a human-readable display name
+fn model_id_to_display_name(id: &str) -> String {
+    let lower = id.to_lowercase();
+    if lower.contains("opus") {
+        extract_model_version(&lower, "Opus")
+    } else if lower.contains("sonnet") {
+        extract_model_version(&lower, "Sonnet")
+    } else if lower.contains("haiku") {
+        extract_model_version(&lower, "Haiku")
+    } else {
+        id.to_string()
+    }
+}
+
+/// Extract version number from a model ID and format as "Family X.Y"
+fn extract_model_version(id: &str, family: &str) -> String {
+    // Match patterns like "opus-4-6", "sonnet-4-6", "haiku-4-5"
+    // Look for the family name and extract digits after it
+    if let Some(pos) = id.find(&family.to_lowercase()) {
+        let after = &id[pos + family.len()..];
+        let digits: Vec<&str> = after
+            .split(|c: char| !c.is_ascii_digit())
+            .filter(|s| !s.is_empty())
+            .collect();
+        match digits.len() {
+            0 => family.to_string(),
+            1 => format!("{} {}", family, digits[0]),
+            _ => format!("{} {}.{}", family, digits[0], digits[1]),
+        }
+    } else {
+        family.to_string()
+    }
+}
 
 /// Input JSON from Claude Code status line invocation
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -11,8 +71,8 @@ pub struct ClaudeInput {
     #[serde(default)]
     pub cwd: Option<PathBuf>,
 
-    /// Current model information
-    #[serde(default)]
+    /// Current model information (accepts string or object)
+    #[serde(default, deserialize_with = "deserialize_model_info")]
     pub model: Option<ModelInfo>,
 
     /// Context window usage (optional)
@@ -154,5 +214,31 @@ mod tests {
         let json = "{}";
         let input: ClaudeInput = serde_json::from_str(json).unwrap();
         assert_eq!(input.get_model().display_name(), "Unknown");
+    }
+
+    #[test]
+    fn test_claude_input_model_as_string() {
+        let json = r#"{"model": "claude-opus-4-6"}"#;
+        let input: ClaudeInput = serde_json::from_str(json).unwrap();
+        assert_eq!(input.get_model().display_name(), "Opus 4.6");
+    }
+
+    #[test]
+    fn test_claude_input_model_as_string_sonnet() {
+        let json = r#"{"model": "claude-sonnet-4-6"}"#;
+        let input: ClaudeInput = serde_json::from_str(json).unwrap();
+        assert_eq!(input.get_model().display_name(), "Sonnet 4.6");
+    }
+
+    #[test]
+    fn test_claude_input_model_as_string_haiku() {
+        let json = r#"{"model": "claude-haiku-4-5-20251001"}"#;
+        let input: ClaudeInput = serde_json::from_str(json).unwrap();
+        assert_eq!(input.get_model().display_name(), "Haiku 4.5");
+    }
+
+    #[test]
+    fn test_model_id_to_display_name_unknown() {
+        assert_eq!(model_id_to_display_name("some-custom-model"), "some-custom-model");
     }
 }

@@ -99,16 +99,16 @@ impl StatusLineBuilder {
         if let Some(ref error) = self.error_message {
             parts.push(format!("⚠️ {}", error));
         } else {
-            // 5-hour cycle
+            // 5-hour cycle (short time only since it resets soon)
             if let Some(ref cycle) = self.five_hour {
                 let pct = cycle.utilization.value();
                 let color = cycle.utilization.threshold().color();
                 let colored_pct = color.colorize(&format!("{}%", pct));
-                let reset = cycle.format_reset_local();
+                let reset = cycle.format_reset_short();
                 parts.push(format!("⚡ {} @{}", colored_pct, reset));
             }
 
-            // 7-day cycle (with reset time)
+            // 7-day cycle (with date + time)
             if let Some(ref cycle) = self.seven_day {
                 let pct = cycle.utilization.value();
                 let color = cycle.utilization.threshold().color();

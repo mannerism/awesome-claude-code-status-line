@@ -81,6 +81,12 @@ impl CycleInfo {
         local.format("%m/%d %H:%M").to_string()
     }
 
+    /// Format reset time as short time only (HH:MM in local timezone)
+    pub fn format_reset_short(&self) -> String {
+        let local = self.resets_at.with_timezone(&Local);
+        local.format("%H:%M").to_string()
+    }
+
     /// Time remaining until reset
     pub fn time_until_reset(&self) -> Duration {
         let now = Utc::now();
